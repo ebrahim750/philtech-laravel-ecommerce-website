@@ -1,0 +1,84 @@
+# Reasonix configuration.
+# Resolution order: flag > ./reasonix.toml > ~/AppData/Roaming/reasonix/config.toml > built-in defaults.
+# Secrets come from the environment via api_key_env; never put keys here.
+
+config_version = 3   # schema marker for diagnostics; old versions may ignore it
+default_model = "deepseek-flash"
+# language      = "zh"   # ui/model language; empty = auto-detect from $LANG / $REASONIX_LANG
+
+[agent]
+# system_prompt = """..."""   # omit to use the built-in prompt for this version
+# system_prompt_file = "prompts/system.md"   # overrides system_prompt when set
+# max_steps         = 0   # executor tool-call rounds; 0 = no limit
+# planner_max_steps = 12   # planner read-only tool-call rounds; 0 = no limit
+temperature       = 0.0
+auto_plan   = "off"   # off|on; off keeps plan mode manual
+# reasoning_language = "zh"   # visible reasoning language: auto|zh|en
+# auto_plan_classifier = "deepseek-flash"   # optional; only used for borderline tasks
+soft_compact_ratio  = 0.5   # notice only; keeps cache-first prefix intact
+compact_ratio       = 0.8   # try compacting when prompt reaches this fraction
+compact_force_ratio = 0.9   # force compacting at this high-water mark
+# keep                = ["errors"]   # compaction keep policy: errors, user_marked
+# recent_keep         = 2   # minimum recent messages kept verbatim
+cold_resume_prune   = true   # elide stale tool results when reopening a session past the provider cache window
+# planner_model = "mimo"   # optional: enable two-model collaboration
+# subagent_model = "deepseek-pro"   # optional default for runAs=subagent skills
+# subagent_models = { review = "deepseek-pro", security_review = "deepseek-pro" }   # per-skill overrides
+# subagent_effort = "high"   # optional default effort for subagents
+# subagent_efforts = { review = "max", task = "high" }   # per-tool/skill effort overrides
+# output_style = "explanatory"   # explanatory | learning | concise | custom; empty = default
+
+[tools]
+enabled = []   # empty = all built-in tools
+bash_timeout_seconds = 120   # foreground safety cap; set 0 for no tool-local cap
+
+[tools.background_jobs]
+stalled_warning_seconds = 900   # warn once per background job after this many quiet seconds; 0 disables
+
+[lsp]
+enabled = true   # language server tools; servers launch lazily when used
+# [lsp.servers.go]
+# command = "gopls"
+# args = []
+# extensions = [".go"]
+
+[skills]
+# paths = ["~/my-skills", "../shared/skills"]   # extra custom skill roots
+# excluded_paths = ["~/.agents/skills"]   # hide convention roots without deleting folders
+# max_depth = 3   # nested scan depth; set 1 for legacy root-only discovery
+# disabled_skills = ["review"]   # hide noisy or unwanted skills
+
+[permissions]
+# Per-call gating. mode = writer fallback when no rule matches: ask|allow|deny.
+# Readers always default to allow. Precedence: deny > ask > allow > fallback.
+# Rules are "Tool" or "Tool(specifier)"; e.g. Bash(go test:*), Edit(src/**).
+mode  = "ask"
+# deny = ["Bash(rm -rf*)", "Bash(git push*)"]   # hard-blocked in every mode
+allow = ["Bash(php -v:*)", "Bash(php -m 2>/dev/null | grep -iE 'opcache|apcu|redis|memcached|xsl')", "Bash(docker ps 2>/dev/null || echo \"No Docker\")", "Bash(composer install --no-interaction 2>&1 | tail -5)", "Bash(php -m 2>&1)", "Bash(php --ini 2>&1)", "Bash(php -r \"echo 'OPcache: ' . (extension_loaded('Zend OPcache') ? 'loaded' : 'NOT LOADED') . PHP_EOL; echo 'APCu: ' . (extension_loaded('apcu') ? 'loaded' : 'NOT LOADED') . PHP_EOL;\" 2>&1)", "Bash(ls public/themes/admin/default/build/ 2>&1 | head -20)", "Bash(ls public/themes/shop/default/build/ 2>&1 | head -20)", "Bash(ls *.hot 2>/dev/null; ls public/*.hot 2>/dev/null; echo \"---done---\")", "Bash(grep -n \"count\" packages/Webkul/Core/src/Config/system.php 2>/dev/null | head -5; echo \"---\"; cat packages/Webkul/Core/src/Config/response_cache.php 2>/dev/null || echo \"No response_cache.php\")", "Bash(cat config/response_cache.php 2>/dev/null || echo \"File not found\")", "Bash(ls packages/Webkul/DebugBar/ 2>/dev/null || echo \"No DebugBar package\")", "Bash(ls packages/Webkul/FPC/ 2>/dev/null || echo \"No FPC package\")", "Bash(php artisan route:count 2>&1)", "Bash(php artisan optimize:clear 2>&1)", "Bash(ls bootstrap/cache/*.php 2>&1)", "Bash(cat config/database.php | head -80)", "Bash(php artisan optimize 2>&1)", "Bash(php artisan tinker --execute=\"echo count(config('app.providers', [])) . ' in config/app.php' . PHP_EOL; echo count(app()->getLoadedProviders()) . ' loaded providers' . PHP_EOL;\" 2>&1 | tail -10)", "Bash(cat bootstrap/cache/packages.php 2>/dev/null | grep \"'providers'\" | head -5; echo \"---\"; grep -c \"'Webkul\\\\\" bootstrap/cache/packages.php 2>/dev/null || echo \"no packages cache\")", "Bash(php artisan tinker --execute=\"\n\\$providers = app()->getLoadedProviders();\n\\$webkul = 0;\nforeach (\\$providers as \\$class => \\$loaded) {\n    if (str_contains(\\$class, 'Webkul')) \\$webkul++;\n}\necho 'Total loaded: ' . count(\\$providers) . PHP_EOL;\necho 'Webkul: ' . \\$webkul . PHP_EOL;\necho 'Other: ' . (count(\\$providers) - \\$webkul) . PHP_EOL;\n\" 2>&1)", "Bash(php -r \"echo 'OPcache: ' . (extension_loaded('Zend OPcache') ? 'LOADED' : 'NOT LOADED') . PHP_EOL; echo 'OPcache status: '; print_r(opcache_get_status(false) ? 'enabled' : 'disabled (check ini)'); echo PHP_EOL;\")", "Bash(grep -n \"opcache\" \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\\env\\php\\php.ini\" 2>&1)", "Bash(php -r \"echo 'opcache.enable = ' . ini_get('opcache.enable') . PHP_EOL; echo 'opcache.revalidate_freq = ' . ini_get('opcache.revalidate_freq') . PHP_EOL; echo 'opcache.memory_consumption = ' . ini_get('opcache.memory_consumption') . PHP_EOL;\")", "Bash(php -r \"\n// Simulate what a web request would show\n\\$start = microtime(true);\nrequire __DIR__ . '/vendor/autoload.php';\n\\$app = require __DIR__ . '/bootstrap/app.php';\n\\$kernel = \\$app->make(Illuminate\\Contracts\\Http\\Kernel::class);\n\\$bootTime = (microtime(true) - \\$start) * 1000;\necho sprintf('Bootstrap time: %.0f ms' . PHP_EOL, \\$bootTime);\n\" 2>&1)", "Bash(curl -s -o /dev/null -w \"Total: %{time_total}s\\nConnect: %{time_connect}s\\nStart Transfer: %{time_starttransfer}s\\n\" http://phil.test/admin/catalog/products 2>&1 || echo \"Could not reach phil.test\")", "Bash(curl -s -o /dev/null -w \"Request 2 — Total: %{time_total}s\\nStart Transfer: %{time_starttransfer}s\\n\\n\" http://phil.test/admin/catalog/products 2>&1\nsleep 1\ncurl -s -o /dev/null -w \"Request 3 — Total: %{time_total}s\\nStart Transfer: %{time_starttransfer}s\\n\" http://phil.test/admin/catalog/products 2>&1)", "Bash(curl -s -I http://phil.test/admin/catalog/products 2>&1 | head -20)", "Bash(php -r \"echo 'Config path: ' . PHP_CONFIG_FILE_PATH . PHP_EOL; echo 'Scan dir: ' . PHP_CONFIG_FILE_SCAN_DIR . PHP_EOL;\")", "Bash(ls \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\\env\\php\\\" 2>&1)", "Bash(curl -s -o /dev/null -w \"Total: %{time_total}s\\nHTTP: %{http_code}\\n\" http://phil.test/admin/dashboard 2>&1)", "Bash(curl -s http://phil.test/ 2>&1 | head -5)", "Bash(tail -30 storage/logs/laravel.log 2>&1)", "Bash(php artisan config:clear 2>&1)", "Bash(curl -s -o /dev/null -w \"Dashboard — HTTP %{http_code}, %{time_total}s\\n\" http://phil.test/admin/dashboard 2>&1)", "Bash(php artisan config:cache 2>&1)", "Bash(curl -s -o /dev/null -w \"Dashboard (cached) — HTTP %{http_code}, %{time_total}s\\n\" http://phil.test/admin/dashboard 2>&1\ncurl -s -o /dev/null -w \"Homepage — HTTP %{http_code}, %{time_total}s\\n\" http://phil.test/ 2>&1)", "Bash(php artisan tinker --execute=\"echo 'default: ' . config('database.default') . PHP_EOL; echo 'session driver: ' . config('session.driver') . PHP_EOL; echo 'session connection: ' . config('session.connection') . PHP_EOL;\" 2>&1)", "Bash(php artisan tinker --execute=\"echo 'env: ' . env('DB_CONNECTION') . PHP_EOL; echo 'config: ' . config('database.default') . PHP_EOL;\" 2>&1)", "Bash(echo %DB_CONNECTION% 2>&1)", "Bash(php -r \"echo 'DB_CONNECTION: ' . getenv('DB_CONNECTION') . PHP_EOL;\")", "Bash(ls -la public/.user.ini 2>/dev/null; ls -la .user.ini 2>/dev/null; echo \"---none found---\")", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -name \"*.conf\" -o -name \"*.ini\" 2>/dev/null | head -20)", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -name \"*.user.ini\" 2>/dev/null)", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -type f -name \"*.conf\" -path \"*php*\" 2>/dev/null)", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -type f -name \"*.conf\" -path \"*fpm*\" 2>/dev/null; find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -type f -name \"*.conf\" -path \"*pool*\" 2>/dev/null; find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -type f -name \"env*\" 2>/dev/null)", "Bash(ls \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\\server\" 2>&1)", "Bash(powershell -Command \"[Environment]::GetEnvironmentVariable('DB_CONNECTION', 'User')\" 2>&1\npowershell -Command \"[Environment]::GetEnvironmentVariable('DB_CONNECTION', 'Machine')\" 2>&1)", "Bash(php -r \"echo 'getenv: ' . var_export(getenv('DB_CONNECTION'), true) . PHP_EOL; echo '\\$_SERVER: ' . var_export(\\$_SERVER['DB_CONNECTION'] ?? 'NOT SET', true) . PHP_EOL;\")", "Bash(find \"C:\\dev\\phil\" -maxdepth 2 -name \".env*\" -type f 2>/dev/null)", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -type f -name \"*.conf\" -o -name \"*.json\" -o -name \"*.env\" 2>/dev/null | xargs grep -l \"DB_CONNECTION\\|sqlite\" 2>/dev/null)", "Bash(php -r \"echo 'ALL ENV VARS with DB_: ' . PHP_EOL; foreach (getenv() as \\$k => \\$v) { if (str_contains(\\$k, 'DB_')) echo \\\"\\$k = \\$v\\\" . PHP_EOL; }\")", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -maxdepth 3 -name \"*.json\" -o -name \"Caddyfile*\" -o -name \"frankenphp*\" 2>/dev/null)", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -maxdepth 3 -name \"host.json\" 2>/dev/null -exec cat {} \\;)", "Bash(php -r \"echo 'ALL env vars:' . PHP_EOL; \\$vars = getenv(); ksort(\\$vars); foreach (\\$vars as \\$k => \\$v) { if (!str_contains(\\$k, '=') && !str_contains(\\$k, ';')) echo \\\"\\$k = \\$v\\\" . PHP_EOL; }\" 2>&1 | grep -i \"sql\\|mysql\\|db_\")", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -type f -name \"*.json\" -not -path \"*/node_modules/*\" 2>/dev/null)", "Bash(set 2>&1 | grep -i \"DB_CONNECTION\\|sqlite\")", "Bash(ls \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\\server\\php\\\" 2>&1)", "Bash(grep -n \"DB_CONNECTION\\|sqlite\" ~/.bashrc ~/.profile ~/.bash_profile ~/.bash_login 2>/dev/null || echo \"Not found in bash startup files\")", "Bash(grep -rn \"DB_CONNECTION\\|sqlite\" /usr/local/bin/ /etc/profile.d/ /etc/bash.bashrc 2>/dev/null || echo \"Not found in system startup files\")", "Bash(powershell -Command \"Get-ChildItem Env:DB_CONNECTION | Select-Object Name, Value\" 2>&1)", "Bash(powershell -Command \"[Environment]::GetEnvironmentVariable('DB_CONNECTION', 'Process')\" 2>&1)", "Bash(powershell -Command \"[Environment]::SetEnvironmentVariable('DB_CONNECTION', 'mysql', 'Process')\" 2>&1)", "Bash(powershell -Command \"Get-CimInstance Win32_Environment -Filter 'Name=\\\"DB_CONNECTION\\\"'\" 2>&1)", "Bash(cmd.exe //c \"reg query HKCU\\Environment /v DB_CONNECTION 2>&1 || echo NOT FOUND\")", "Bash(cmd.exe //c \"reg query HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment /v DB_CONNECTION 2>&1 || echo NOT FOUND\")", "Bash(ls \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\\\" 2>&1)", "Bash(find \"C:\\Users\\ebrah\\AppData\\Local\\Programs\\FlyEnv-Data\" -maxdepth 2 -name \"*.json\" -o -name \"*.yaml\" -o -name \"*.yml\" -o -name \"*.conf\" -o -name \"*.toml\" 2>/dev/null)", "Bash(cmd.exe //c:*)", "Edit", "Bash(php artisan config:clear 2>&1 && php artisan config:cache 2>&1)", "Bash(curl -s -o /dev/null -w \"Homepage — HTTP %{http_code}, %{time_total}s\\n\" http://phil.test/ 2>&1)", "Bash(tail -5 storage/logs/laravel.log 2>&1)", "Bash(grep -A 3 \"local.ERROR\\|Fatal error\\|Parse error\" storage/logs/laravel.log 2>&1 | tail -20)", "Bash(php artisan config:clear 2>&1\nphp artisan tinker --execute=\"\nconfig(['database.default' => 'mysql']);\necho 'default: ' . config('database.default') . PHP_EOL;\necho 'session driver: ' . config('session.driver') . PHP_EOL;\n\" 2>&1)"]
+# ask = ["Edit(src/**)"]   # force a prompt even if otherwise allowed
+
+[sandbox]
+# Confine tool blast radius. File-writers (write_file/edit_file/multi_edit/move_file)
+# may only write under workspace_root (empty = current dir) and allow_write extras.
+# bash = "enforce" (default) jails each command in an OS sandbox (macOS now;
+# graceful fallback elsewhere); "off" disables it. network allows egress.
+# workspace_root = ""            # default: current working directory
+# allow_write = ["/tmp"]          # extra dirs writers may also modify
+bash    = "enforce"
+network = true
+
+[statusline]
+# A custom status line: a command whose first stdout line replaces the built-in
+# data row. It receives {"model","contextUsed","contextWindow","cwd"} as JSON on stdin.
+# command = "my-statusline.sh"
+
+# External MCP servers. type: "stdio" (default, a subprocess) | "http" | "sse".
+# ${VAR} / ${VAR:-default} are expanded from the environment in command/args/env/url/headers.
+# [[plugins]]
+# name    = "example"
+# command = "reasonix-plugin-example"
+# [[plugins]]                                  # a remote server over Streamable HTTP
+# name    = "stripe"
+# type    = "http"
+# url     = "https://mcp.stripe.com"
+# headers = { Authorization = "Bearer ${STRIPE_KEY}" }
