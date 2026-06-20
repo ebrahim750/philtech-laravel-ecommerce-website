@@ -129,11 +129,16 @@
 
                 <!-- Powered By -->
                 <div class="mt-auto">
-                    <div class="border-t bg-white py-2 text-center text-xs sm:text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-white">
-                        @lang('admin::app.components.layouts.powered-by.description', [
-                            'bagisto' => '<a class="text-blue-600 hover:underline dark:text-darkBlue" href="https://bagisto.com/en/">Bagisto</a>',
-                            'webkul' => '<a class="text-blue-600 hover:underline dark:text-darkBlue" href="https://webkul.com/">Webkul</a>',
-                        ])
+                    <div class="border-t bg-white py-2 text-xs sm:text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-white">
+                        <div class="flex justify-between items-center px-5">
+                            <span class="flex-1 text-center">
+                                Phil Technologies &copy; {{ date('Y') }} | All Rights Reserved.
+                            </span>
+
+                            <span class="text-right">
+                                Built by <a class="text-blue-600 hover:underline dark:text-darkBlue" href="https://hydratech.co.ke" target="_blank">HydraTech</a>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
