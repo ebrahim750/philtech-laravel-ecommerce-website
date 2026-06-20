@@ -12,4 +12,5 @@ Homestead.yaml
 /node_modules
 package-lock.json
 /vendor
+packages/Webkul/HydraTechTheme/node_modules
 # Backup archives (included in git for portability)
