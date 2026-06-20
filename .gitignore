@@ -11,3 +11,4 @@ Homestead.yaml
 /ignorables/*
 /node_modules
 package-lock.json
+# Backup archives (included in git for portability)

@@ -10,7 +10,7 @@ return [
     |
     */
 
-    'shop-default' => 'default',
+    'shop-default' => 'hydra-tech-theme',
 
     'shop' => [
         'default' => [
@@ -21,6 +21,18 @@ return [
             'vite' => [
                 'hot_file' => 'shop-default-vite.hot',
                 'build_directory' => 'themes/shop/default/build',
+                'package_assets_directory' => 'src/Resources/assets',
+            ],
+        ],
+
+        'hydra-tech-theme' => [
+            'name' => 'HydraTechTheme',
+            'assets_path' => 'public/themes/shop/hydra-tech-theme',
+            'views_path' => 'resources/themes/hydra-tech-theme/views',
+
+            'vite' => [
+                'hot_file' => 'hydra-tech-theme-vite.hot',
+                'build_directory' => 'themes/shop/hydra-tech-theme/build',
                 'package_assets_directory' => 'src/Resources/assets',
             ],
         ],
